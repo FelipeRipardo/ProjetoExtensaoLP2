@@ -1,0 +1,47 @@
+# --- Arquivos de Compilação Maven (Lixo gerado pelo Java) ---
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# --- Arquivos de Log (Erros e registros) ---
+*.log
+logs/
+
+# --- Arquivos de IDE (Configurações locais que não devem subir) ---
+### STS / Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+
+# --- Arquivos de Sistema Operacional (Lixo do Windows/Mac) ---
+.DS_Store
+Thumbs.db
+
+# --- Arquivos Comprimidos (Backups que você pode ter feito) ---
+*.rar
+*.zip
+*.7z
