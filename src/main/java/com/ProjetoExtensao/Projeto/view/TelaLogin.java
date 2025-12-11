@@ -135,9 +135,9 @@ public class TelaLogin extends JFrame {
         String email = txtEmail.getText();
         String senha = new String(txtSenha.getPassword());
 
-        // --- BYPASS PARA APRESENTAÇÃO (Modificado para sua segurança) ---
-        // Se digitar admin@email.com e 1234, entra direto sem consultar o banco.
-        // Isso previne erros caso o banco H2 ainda esteja carregando.
+        // --- BYPASS PARA APRESENTAÇÃO ---
+        //Se digitar admin@email.com e 1234, entra direto sem consultar o banco.
+        //Isso previne erros caso o banco H2 ainda esteja carregando.
         if (email.equals("admin@email.com") && senha.equals("1234")) {
             navigationService.abrirTelaGeral();
             dispose();
@@ -145,7 +145,7 @@ public class TelaLogin extends JFrame {
         }
         // ----------------------------------------------------------------
 
-        // Lógica original (Mantida para casos de uso real fora do bypass)
+        //Lógica original (Mantida para casos de uso real fora do bypass)
         try {
             ResponsavelSaude responsavelSaude = responsavelService.findResponsavelByEmail(email);
 
@@ -160,7 +160,7 @@ public class TelaLogin extends JFrame {
                 mostrarErroEmail("Email inválido");
             }
         } catch (Exception e) {
-            // Se der erro de conexão real e não for o admin, avisa
+            //Se der erro de conexão real e não for o admin, avisa
             JOptionPane.showMessageDialog(this, "Erro ao conectar. Tente o login de apresentação (admin).");
         }
     }
