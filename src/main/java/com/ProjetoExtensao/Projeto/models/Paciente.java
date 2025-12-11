@@ -39,7 +39,7 @@ public class Paciente {
     @Column(nullable = false)
     private LocalDate dataEntrada;
 
-    @OneToMany(mappedBy = "paciente")
+    @OneToMany(mappedBy = "paciente", fetch = FetchType.EAGER) // <--- ADICIONE ESTE TRECHO
     private List<Consulta> consultas;
 
     public Paciente(String nomeCompleto, String cpf, LocalDate dataNascimento, String nomeMae, String cartaoSUS, LocalDate dataEntrada) {

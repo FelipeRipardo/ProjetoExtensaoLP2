@@ -22,13 +22,12 @@ public class TelaRelatorios extends JPanel {
     private final PacienteRepositorio pacienteRepositorio;
     private final ConsultaRepositorio consultaRepositorio;
 
-    //Componentes que precisam ser acessados globalmente na classe
+    //Componentes globais
     private JLabel lblNomeResultado;
     private JLabel lblNascResultado;
     private JLabel lblCartaoSus;
-    private JButton btnGerarProntuario;
     private JPanel painelResultado;
-    private Paciente pacienteEncontrado; //Guarda o paciente da busca atual
+    private Paciente pacienteEncontrado;
 
     public TelaRelatorios(PacienteRepositorio pacienteRepo, ConsultaRepositorio consultaRepo) {
         this.pacienteRepositorio = pacienteRepo;
@@ -44,7 +43,7 @@ public class TelaRelatorios extends JPanel {
         titulo.setBounds(40, 20, 400, 30);
         add(titulo);
 
-        //Primeiro passo: DASHBOARD
+        //Primeiro passo: DASHBOARD (Cards)
         String totalPacientes = String.valueOf(pacienteRepo.count());
         JPanel cardPacientes = criarCard("Total de Idosas", totalPacientes, new Color(100, 149, 237), 40, 70);
         add(cardPacientes);
@@ -53,11 +52,21 @@ public class TelaRelatorios extends JPanel {
         JPanel cardConsultas = criarCard("Consultas Realizadas", totalConsultas, new Color(60, 179, 113), 260, 70);
         add(cardConsultas);
 
-        //Segundo passo: ÁREA DE BUSCA
+        //Botão de relatório geral
+        JButton btnGeral = new JButton("Relatório Geral (Todos)");
+        btnGeral.setBounds(480, 85, 200, 40);
+        btnGeral.setBackground(new Color(70, 130, 180));
+        btnGeral.setForeground(Color.WHITE);
+        btnGeral.setFocusPainted(false);
+        btnGeral.setFont(new Font("Arial", Font.BOLD, 12));
+        add(btnGeral);
+
+        // --- SEPARADOR ---
         JSeparator separator = new JSeparator();
         separator.setBounds(40, 210, 700, 10);
         add(separator);
 
+        //Segundo passo - ÁREA DE BUSCA
         JLabel lblBusca = new JLabel("Consultar Prontuário Individual");
         lblBusca.setFont(new Font("Arial", Font.BOLD, 18));
         lblBusca.setForeground(new Color(50, 50, 50));
@@ -69,25 +78,24 @@ public class TelaRelatorios extends JPanel {
         lblCpf.setBounds(40, 270, 100, 30);
         add(lblCpf);
 
-        //CAMPO FORMATADO (MÁSCARA)
         JFormattedTextField txtCpf = criarCampoCpf();
         txtCpf.setBounds(140, 270, 150, 30);
         add(txtCpf);
 
         JButton btnBuscar = new JButton("Buscar");
         btnBuscar.setBounds(300, 270, 100, 30);
-        btnBuscar.setBackground(new Color(70, 130, 180));
+        btnBuscar.setBackground(new Color(100, 100, 100));
         btnBuscar.setForeground(Color.WHITE);
         btnBuscar.setFocusPainted(false);
         add(btnBuscar);
 
-        //Terceiro passo: PAINEL DE RESULTADOS (Invisível no início)
+        //Terceiro passo: PAINEL DE RESULTADOS (Oculto inicialmente)
         painelResultado = new JPanel();
         painelResultado.setLayout(null);
-        painelResultado.setBounds(40, 320, 700, 200);
+        painelResultado.setBounds(40, 320, 700, 180);
         painelResultado.setBackground(Color.WHITE);
         painelResultado.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        painelResultado.setVisible(false); // Começa escondido
+        painelResultado.setVisible(false);
 
         JLabel lblTituloRes = new JLabel("Dados da Residente:");
         lblTituloRes.setFont(new Font("Arial", Font.BOLD, 14));
@@ -99,16 +107,16 @@ public class TelaRelatorios extends JPanel {
         painelResultado.add(lblNomeResultado);
 
         lblNascResultado = new JLabel("Nascimento: -");
-        lblNascResultado.setBounds(20, 70, 300, 20);
+        lblNascResultado.setBounds(20, 70, 250, 20);
         painelResultado.add(lblNascResultado);
 
         lblCartaoSus = new JLabel("Cartão SUS: -");
         lblCartaoSus.setBounds(300, 70, 300, 20);
         painelResultado.add(lblCartaoSus);
 
-        btnGerarProntuario = new JButton("Baixar Histórico Completo (.txt)");
-        btnGerarProntuario.setBounds(20, 120, 250, 40);
-        btnGerarProntuario.setBackground(new Color(34, 139, 34)); // Verde Floresta
+        JButton btnGerarProntuario = new JButton("Baixar Histórico Individual (.txt)");
+        btnGerarProntuario.setBounds(20, 110, 250, 40);
+        btnGerarProntuario.setBackground(new Color(34, 139, 34)); // Verde
         btnGerarProntuario.setForeground(Color.WHITE);
         btnGerarProntuario.setFont(new Font("Arial", Font.BOLD, 13));
         btnGerarProntuario.setFocusPainted(false);
@@ -118,11 +126,16 @@ public class TelaRelatorios extends JPanel {
 
         // --- AÇÕES DOS BOTÕES ---
 
+        //1 - Ação Relatório Geral
+        btnGeral.addActionListener(e -> gerarRelatorioGeral());
+
+        //2 - Ação Buscar
         btnBuscar.addActionListener(e -> {
             String cpfDigitado = txtCpf.getText();
             buscarPaciente(cpfDigitado);
         });
 
+        //3 - Ação Relatório Individual
         btnGerarProntuario.addActionListener(e -> {
             if (pacienteEncontrado != null) {
                 gerarRelatorioIndividual(pacienteEncontrado);
@@ -130,39 +143,49 @@ public class TelaRelatorios extends JPanel {
         });
     }
 
-    private JFormattedTextField criarCampoCpf() {
-        try {
-            MaskFormatter mask = new MaskFormatter("###.###.###-##");
-            mask.setPlaceholderCharacter('_'); // Mostra ___.___.___-__
-            JFormattedTextField field = new JFormattedTextField(mask);
-            field.setFont(new Font("Arial", Font.PLAIN, 14));
-            return field;
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return new JFormattedTextField();
+    // --- MÉTODOS DE LÓGICA ---
+
+    private void gerarRelatorioGeral() {
+        List<Paciente> lista = pacienteRepositorio.findAll();
+        String nomeArquivo = "Relatorio_Geral_Censo.txt";
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(nomeArquivo))) {
+            writer.println("=== CENSO GERAL DE RESIDENTES ===");
+            writer.println("Data: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            writer.println("Total Registrado: " + lista.size());
+            writer.println("---------------------------------\n");
+
+            for (Paciente p : lista) {
+                writer.println(p.getNomeCompleto() + " | CPF: " + p.getCpf());
+            }
+
+            //Popup de confirmação (Feedback Visual)
+            JOptionPane.showMessageDialog(this,
+                    "Relatório Geral gerado com sucesso!\n\nArquivo salvo como: " + nomeArquivo,
+                    "Sucesso",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao gerar: " + ex.getMessage());
         }
     }
 
     private void buscarPaciente(String cpf) {
-        //Busca no banco usando o novo método findByCpf
         Optional<Paciente> resultado = pacienteRepositorio.findByCpf(cpf);
 
         if (resultado.isPresent()) {
             pacienteEncontrado = resultado.get();
-
-            //Atualiza a tela
             lblNomeResultado.setText("Nome: " + pacienteEncontrado.getNomeCompleto());
             lblNascResultado.setText("Nascimento: " + pacienteEncontrado.getDataNascimento());
             lblCartaoSus.setText("Cartão SUS: " + pacienteEncontrado.getCartaoSUS());
-
-            painelResultado.setVisible(true); // Mostra o painel
+            painelResultado.setVisible(true);
             repaint();
         } else {
             painelResultado.setVisible(false);
             pacienteEncontrado = null;
             JOptionPane.showMessageDialog(this,
-                    "CPF não encontrado na base de dados.\nTente novamente com um CPF já cadastrado.",
-                    "Não encontrado", JOptionPane.WARNING_MESSAGE);
+                    "CPF não encontrado!\nTente novamente com um CPF já cadastrado.",
+                    "Atenção", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -170,43 +193,46 @@ public class TelaRelatorios extends JPanel {
         String nomeArquivo = "Prontuario_" + p.getNomeCompleto().replace(" ", "_") + ".txt";
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(nomeArquivo))) {
-            writer.println("=== PRONTUÁRIO INDIVIDUAL - RECANTO DO SAGRADO CORAÇÃO ===");
-            writer.println("Data de Emissão: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-            writer.println("========================================================\n");
-
-            writer.println("1. DADOS PESSOAIS");
+            writer.println("=== PRONTUÁRIO INDIVIDUAL ===");
+            writer.println("Emissão: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            writer.println("--------------------------------------------");
             writer.println("Nome: " + p.getNomeCompleto());
             writer.println("CPF: " + p.getCpf());
-            writer.println("Data de Nascimento: " + p.getDataNascimento());
-            writer.println("Nome da Mãe: " + p.getNomeMae());
-            writer.println("Cartão SUS: " + p.getCartaoSUS());
-            writer.println("Data de Entrada: " + p.getDataEntrada());
-            writer.println("\n--------------------------------------------------------\n");
+            writer.println("Mãe: " + p.getNomeMae());
+            writer.println("--------------------------------------------\n");
 
-            writer.println("2. HISTÓRICO DE CONSULTAS E EVOLUÇÃO");
-
-            //Busca consultas vinculadas a este paciente (Se a lista estiver carregada)
+            writer.println("HISTÓRICO DE CONSULTAS:");
             if (p.getConsultas() != null && !p.getConsultas().isEmpty()) {
                 for (Consulta c : p.getConsultas()) {
-                    writer.println("Data: " + c.getData() + " às " + c.getHora());
-                    writer.println("Tipo: " + c.getTipoConsulta());
-                    writer.println("Médico/Responsável: " + c.getResponsavelSaude().getNomeCompleto());
-                    writer.println("--------------------");
+                    writer.println("- " + c.getData() + " [" + c.getTipoConsulta() + "]");
                 }
             } else {
-                writer.println("Nenhum registro de consulta encontrado para este período.");
+                writer.println("(Nenhuma consulta registrada)");
             }
 
-            writer.println("\n\nAssinatura do Responsável:\n__________________________________");
-
-            JOptionPane.showMessageDialog(this, "Prontuário gerado com sucesso!\nArquivo: " + nomeArquivo);
+            //Popup de confirmação (Feedback Visual)
+            JOptionPane.showMessageDialog(this,
+                    "Prontuário de " + p.getNomeCompleto() + " gerado!\n\nArquivo: " + nomeArquivo,
+                    "Sucesso",
+                    JOptionPane.INFORMATION_MESSAGE);
 
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "Erro ao gerar arquivo: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Erro: " + ex.getMessage());
         }
     }
 
-    //Método auxiliar visual (mesmo de antes)
+    private JFormattedTextField criarCampoCpf() {
+        try {
+            MaskFormatter mask = new MaskFormatter("###.###.###-##");
+            mask.setPlaceholderCharacter('_');
+            JFormattedTextField field = new JFormattedTextField(mask);
+            field.setFont(new Font("Arial", Font.PLAIN, 14));
+            return field;
+        } catch (ParseException e) {
+            return new JFormattedTextField();
+        }
+    }
+
     private JPanel criarCard(String titulo, String valor, Color cor, int x, int y) {
         JPanel card = new JPanel();
         card.setLayout(null);
